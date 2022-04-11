@@ -86,7 +86,7 @@ def calc_a_b_theta(B, C, D):
         return -1, -1, -1
     a_round = int(a / 6)
     b_round = int(b)
-    theta = 0.5 * np.degrees(theta_rad)
+    theta = -0.5 * np.degrees(theta_rad)
     return a_round, b_round, theta
 
 def distance_not_too_small(top_three_index, votes_mat, point, top_three):
@@ -338,7 +338,7 @@ random_index_list = list(range(0, len(list_of_points_on_edges) - 1))
 #        int(len(list_of_points_on_edges))):  # creating all lines that are created according to simon's article
 #    for _ in range(int(len(list_of_points_on_edges) / 10 )):
 for _ in range(100):  # creating all lines that are created according to simon's article
-    for _ in range(100):
+    for _ in range(800):
         i = random.choice(random_index_list)
         j = random.choice(random_index_list)
         if i != j and list_of_points_on_edges[i][0] != list_of_points_on_edges[j][0]:
@@ -512,8 +512,8 @@ dict_d = {0: d_val + 1,
           8: d_val + 8 * add_me - 1}
 
 cur_max = 0
-center_coordinates = (80, 126)
-center_coordinates2 = (150, 50)
+center_coordinates = (83, 128)
+center_coordinates2 = (148, 49)
 # (275, 228) # (336, 319)  # (204, 128)  #
 d3_mat = np.zeros((9, 9, 9))
 cur_max_index = [0, 0, 0]
@@ -605,7 +605,7 @@ for center_i, center_vote in enumerate([center_of_votes, center_of_votes2]):
         else:
             D = np.sqrt(B) - 1
     a, b, theta = calc_a_b_theta(B, C, D)
-    show_image(ellipses_color, a, b, -theta, (20, 100, 255), 3, centers[center_i])
+    show_image(ellipses_color, a, b, theta, (20, 100, 255), 3, centers[center_i])
     dict_b = {0: b_start,
               1: b_start + b_add,
               2: b_start + 2 * b_add,
