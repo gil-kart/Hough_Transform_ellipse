@@ -89,16 +89,15 @@ def calc_a_b_theta(B, C, D):
     theta = 0.5 * np.degrees(theta_rad)
     return a_round, b_round, theta
 
-def check_distance(top_three_index, votes_mat, point):
-    check_point = np.array(point) # afdasfd
+def distance_not_too_small(top_three_index, votes_mat, point, top_three):
+    check_point = np.array(point)
     for i, index in enumerate(top_three_index):
         cur_point = np.array(index)
         dist = np.linalg.norm(check_point-cur_point)
-        if votes_mat[index[0]][index[1]] < votes_mat[point[0]][point[0]]:
-            top_three_index[i] = point
-            if dist < 80 and len(top_three_index) > 3:
-                return False
-            return True
+        if dist < 40:
+            if votes_mat[index[0]][index[1]] < votes_mat[point[0]][point[1]]:
+                top_three_index[i] = point
+            return False
     return True
 
 
@@ -165,6 +164,23 @@ def update_dicts(dict_b, dict_c, dict_d, cur_max_index):
             if cur_dict[key] > max_dict_val or key == 8:
                 cur_dict[key] = max_dict_val
     return
+
+
+def find_min_val_and_index(top_three_index, votes_mat):
+    min_val = votes_mat[top_three_index[0][0]][top_three_index[0][1]]
+    ret_indexes = top_three_index[0]
+    for index in top_three_index:
+        if votes_mat[index[0]][index[1]] <= min_val:
+            min_val = votes_mat[index[0]][index[1]]
+            ret_indexes = [index[0], index[1]]
+    return ret_indexes, min_val
+
+
+
+def remove_and_update(top_three, top_three_index, votes_mat, new_index):
+    min_index, min_val = find_min_val_and_index(top_three_index, votes_mat)
+    top_three_index.remove(min_index)
+    top_three_index.append(new_index)
     # #  ----------- making sure that d is in the range  - sqrt(b), sqrt(b) ----------
     # if dict_d[cur_max_index[2]] ** 2 > dict_b[8]:
     #     max_dict_d = int(np.sqrt(dict_b[8]))
@@ -230,7 +246,19 @@ def update_dicts(dict_b, dict_c, dict_d, cur_max_index):
 path_image = r'ellipses/images.jpg'
 ellipses_color = cv2.imread(path_image)
 ellipses_gray = cv2.cvtColor(ellipses_color, cv2.COLOR_BGR2GRAY)
-ellipses_edge = cv2.Canny(ellipses_gray, 400, 450)
+# ellipses_edge = cv2.Canny(ellipses_gray, 400, 450)
+# plt.imshow(ellipses_edge)
+# plt.show()
+#
+# ellipses_edge = cv2.Canny(ellipses_gray, 800, 850)
+# plt.imshow(ellipses_edge)
+# plt.show()
+
+ellipses_edge = cv2.Canny(ellipses_gray, 900, 1150)
+plt.imshow(ellipses_edge)
+plt.show()
+
+
 
 # empty_img_zero = np.zeros(ellipses_edge.shape)
 # center_coordinates = (207, 227)
@@ -238,9 +266,9 @@ ellipses_edge = cv2.Canny(ellipses_gray, 400, 450)
 # empty_img_col = show_image(empty_img_zero, a, b, theta, (255, 130, 130), -1)
 # path_empty =  r'ellipses/elipse_test5.jpg'
 # cv2.imwrite(path_empty, empty_img_col)
-im = cv2.imread(path_image)
-im2 = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
-empty_img = cv2.Canny(im2, 400, 450)
+# im = cv2.imread(path_image)
+# im2 = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
+# empty_img = cv2.Canny(im2, 400, 450)
 # plt.imshow(empty_img)
 # plt.show()
 # plt.imshow(im)
@@ -304,7 +332,7 @@ random_index_list = list(range(0, len(list_of_points_on_edges) - 1))
 #finding middle point for one ellipse
 for _ in range(
         int(len(list_of_points_on_edges))):  # creating all lines that are created according to simon's article
-    for _ in range(int(len(list_of_points_on_edges) / 10)):
+    for _ in range(int(len(list_of_points_on_edges) / 5)):
         i = random.choice(random_index_list)
         j = random.choice(random_index_list)
         if i != j and list_of_points_on_edges[i][0] != list_of_points_on_edges[j][0]:
@@ -345,22 +373,60 @@ for line in line_list:
         if 0 <= y < votes_mat.shape[1]:
             votes_mat[int(x)][int(y)] += 1
 
-top_five = [0, 0, 0, 0, 0]
-top_three_index = [[0, 0], [0, 0], [0, 0]]
+top_three = [votes_mat[0][0], votes_mat[0][1], votes_mat[0][2]]
+top_three_index = [[0, 0], [0, 1], [0, 2]]
 centers = []
 indexes = [0, 0]
 max_size = 0
+local_maiximums = []
 
-for i in range(12, len(votes_mat) - 12):
-    for j in range(12, len(votes_mat[0]) - 12):
-        res = calc_cur(votes_mat, i, j)
-        if (res > min(top_five)) and check_distance(top_three_index, votes_mat, [i, j]):
-            top_five.remove(min(top_five))
-            top_five.append(res)
-            top_three_index.pop(0)
-            top_three_index.append([i, j])
 
+def find_local_maximum(i, j, votes_mat, cube):
+    cur_max = 0
+    ret = [0, 0]
+    for row in range(i - cube, i):
+        for col in range(j - cube, j):
+            if votes_mat[row][col] > cur_max:
+                cur_max = votes_mat[row][col]
+                ret = [row, col]
+    return cur_max, ret
+def takethird(elem):
+    return elem[1]
+
+
+cube = 50
+for i in range(cube, len(votes_mat), cube):
+    for j in range(cube, len(votes_mat[0]), cube):
+        val, local_maximum = find_local_maximum(i, j, votes_mat, cube - 1)
+        local_maiximums.append([local_maximum, val])
+local_maiximums.sort(key=takethird)
+
+# for i in range(12, len(votes_mat) - 12):
+#     for j in range(12, len(votes_mat[0]) - 12):
+#         res = calc_cur(votes_mat, i, j)
+#         if res <= min(top_three):
+#             continue
+#         if distance_not_too_small(top_three_index, votes_mat, [i, j], top_three):
+#             remove_and_update(top_three, top_three_index, votes_mat, [i,j])
+
+for index in local_maiximums:
+
+    check = index[0][1]
+    check2 = index[0][0]
+
+    ellipses_gray = cv2.circle(ellipses_gray, (index[0][1], index[0][0]), radius=5, color=(0, 0, 0),
+                       thickness=-1)
+
+#
+# image = cv2.circle(ellipses_gray, (top_three_index[0][1], top_three_index[0][0]), radius=1, color=(0, 0, 0), thickness=-1)
+# image = cv2.circle(image, (top_three_index[1][1], top_three_index[1][0]), radius=1, color=(0, 0, 0), thickness=-1)
+# image = cv2.circle(image, (top_three_index[2][1], top_three_index[2][0]), radius=1, color=(0, 0, 0), thickness=-1)
+
+plt.figure()
+plt.imshow(ellipses_gray)
+plt.show()
 zaop = 0
+
 
 # plt.figure()
 # plt.imshow(votes_mat)
@@ -500,6 +566,6 @@ if B < D ** 2:
     else:
         D = np.sqrt(B) - 1
 a, b, theta = calc_a_b_theta(B, C, D)
-show_image(im, a, b, theta, (0, 255, 0), 5)
+#show_image(im, a, b, theta, (0, 255, 0), 5)
 
 dasfdas = 0
