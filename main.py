@@ -90,7 +90,7 @@ def calc_a_b_theta(B, C, D):
     return a_round, b_round, theta
 
 def check_distance(top_three_index, votes_mat, point):
-    check_point = np.array(point)
+    check_point = np.array(point) # afdasfd
     for i, index in enumerate(top_three_index):
         cur_point = np.array(index)
         dist = np.linalg.norm(check_point-cur_point)
